@@ -1,6 +1,16 @@
 import pandas as pd
 from collections import defaultdict
 import json
+import math
+
+def add_skip_pointers(postings):
+    skip_distance = int(math.sqrt(len(postings)))
+    for i in range(0, len(postings), skip_distance):
+        if i + skip_distance < len(postings):
+            postings[i] = [postings[i], i + skip_distance]
+        else:
+            postings[i] = [postings[i], None]
+    return postings
 
 def build_inverted_index(csv_file):
     inverted_index = defaultdict(list)
@@ -11,6 +21,11 @@ def build_inverted_index(csv_file):
         terms = eval(row.iloc[1])
         for term in terms:
             inverted_index[term].append(doc_id)
+    
+    # Sort the postings and add skip pointers
+    for term in inverted_index:
+        inverted_index[term] = sorted(inverted_index[term])
+        inverted_index[term] = add_skip_pointers(inverted_index[term])
     
     return inverted_index
 
