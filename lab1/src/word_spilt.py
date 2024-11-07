@@ -10,19 +10,19 @@ def word_split(tags):
         #seg_list = jieba.cut_for_search(tag)  # jieba分词
         seg_list = pkuseg.pkuseg().cut(tag) #pkuseg分词
         #去除停用词
-        with open('cn_stopwords.txt', 'r', encoding='utf-8') as f:
+        with open('./data/cn_stopwords.txt', 'r', encoding='utf-8') as f:
             stopwords = set(line.strip() for line in f)
         seg_list = [word for word in seg_list if word not in stopwords]
-        with open('hit_stopwords.txt', 'r', encoding='utf-8') as f:
+        with open('./data/hit_stopwords.txt', 'r', encoding='utf-8') as f:
             stopwords = set(line.strip() for line in f)
         seg_list = [word for word in seg_list if word not in stopwords]
         for word in seg_list :
             result.append(word)
 
-    # with open('cn_stopwords.txt', 'r', encoding='utf-8') as f:
+    # with open('./data/cn_stopwords.txt', 'r', encoding='utf-8') as f:
     #     stopwords = set(line.strip() for line in f)
     # tags = [word for word in tags if word not in stopwords]
-    # with open('hit_stopwords.txt', 'r', encoding='utf-8') as f:
+    # with open('./data/hit_stopwords.txt', 'r', encoding='utf-8') as f:
     #     stopwords = set(line.strip() for line in f)
     # tags = [word for word in tags if word not in stopwords]
     # for word in tags:
@@ -46,7 +46,7 @@ def word_split(tags):
     
 
 
-df = pd.read_csv('./data/selected_book_top_1200_data_tag.csv')
+df = pd.read_csv('./data/origin/selected_book_top_1200_data_tag.csv')
 book_data = []
 count = 0
 for index, row in df.iterrows():
@@ -58,9 +58,9 @@ for index, row in df.iterrows():
     split_result = word_split(tags)
 
     book_data.append({'Book': row['Book'], 'Tags': split_result})
-pd.DataFrame(book_data, columns = ['Book', 'Tags']).to_csv("./result/book_test.csv", index=False)
+pd.DataFrame(book_data, columns = ['Book', 'Tags']).to_csv("./data/result/book_test.csv", index=False)
 
-# df = pd.read_csv('./data/selected_movie_top_1200_data_tag.csv')
+# df = pd.read_csv('./data/origin/selected_movie_top_1200_data_tag.csv')
 # movie_data = []
 # count = 0
 # for index, row in df.head().iterrows():
@@ -72,4 +72,4 @@ pd.DataFrame(book_data, columns = ['Book', 'Tags']).to_csv("./result/book_test.c
 #     split_result = word_split(tags)
 
 #     movie_data.append({'Movie': row['Movie'], 'Tags': split_result})
-# pd.DataFrame(movie_data, columns = ['Movie', 'Tags']).to_csv("./result/movie_test.csv", index=False)
+# pd.DataFrame(movie_data, columns = ['Movie', 'Tags']).to_csv("./data/result/movie_test.csv", index=False)
