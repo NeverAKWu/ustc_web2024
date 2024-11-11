@@ -87,7 +87,7 @@ class SkipList:
 
 class BooleanQuery:
     def __init__(self, index_file):
-        with open(index_file, 'r') as f:
+        with open(index_file, 'r', encoding='utf-8') as f:
             self.inverted_index = json.load(f)
 
     def query(self, query_string):
