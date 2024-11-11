@@ -7,11 +7,12 @@ class SkipList:
 
     def add_skip_pointers(postings):
         skip_distance = int(math.sqrt(len(postings)))
-        for i in range(0, len(postings), skip_distance):
-            if i + skip_distance < len(postings):
-                postings[i] = [postings[i], i + skip_distance]
-            else:
-                postings[i] = [postings[i], None]
+        if skip_distance > 1:
+            for i in range(0, len(postings), skip_distance):
+                if i + skip_distance < len(postings):
+                    postings[i] = [postings[i], i + skip_distance]
+                else:
+                    postings[i] = [postings[i], None]
         return postings
     
     def merge(self, other, op):
