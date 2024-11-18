@@ -111,13 +111,12 @@ class BooleanQuery:
                 term += char
         if term:
             terms.append(term)
+        
+        terms = [term.upper() if term in ['and', 'or', 'and_not'] else term for term in terms]
         return terms
     
     def query(self, query_string):
         terms = self.get_terms(query_string)
-
-        for term in terms:
-            print(term)
 
         if len(terms) == 1:
             return [doc[0] if isinstance(doc, list) else doc for doc in self.inverted_index.get(terms[0], [])]
