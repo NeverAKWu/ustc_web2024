@@ -90,23 +90,66 @@ class BooleanQuery:
         with open(index_file, 'r', encoding='utf-8') as f:
             self.inverted_index = json.load(f)
 
+    def get_terms(self, query_string):
+        terms = []
+        term = ''
+        for char in query_string:
+            if char == '（':
+                char = '('
+            elif char == '）':
+                char = ')'
+            if char in ['(', ')']:
+                if term:
+                    terms.append(term)
+                    term = ''
+                terms.append(char)
+            elif char.isspace():
+                if term:
+                    terms.append(term)
+                    term = ''
+            else:
+                term += char
+        if term:
+            terms.append(term)
+        return terms
+    
     def query(self, query_string):
-        terms = query_string.split()
+        terms = self.get_terms(query_string)
+
+        for term in terms:
+            print(term)
+
         if len(terms) == 1:
             return [doc[0] if isinstance(doc, list) else doc for doc in self.inverted_index.get(terms[0], [])]
-        
-        result = None
-        op = None
+
+        stack = []
+        current = None
         for term in terms:
-            if term in ['AND', 'OR', 'AND_NOT']:
-                op = term
+            if term == '(':
+                stack.append((None, None))
+                current = None
+            elif term == ')':
+                stack.pop()
+                if stack[-1][1] is None:
+                    stack.pop()
+                if stack:
+                    last_current, last_op = stack.pop()
+                    if last_op is not None:
+                        current = SkipList(last_current.merge(current, last_op))
+                        current.elements = SkipList.add_skip_pointers(current.elements)
+                stack.append((current, None))
+            elif term in ['AND', 'OR', 'AND_NOT']:
+                stack[-1] = (stack[-1][0], term)
             else:
-                if result is None:
-                    result = SkipList(self.inverted_index.get(term, []))
+                if stack and stack[-1][1] is not None:
+                    last_current, last_op = stack.pop()
+                    current = SkipList(last_current.merge(SkipList(self.inverted_index.get(term, [])), last_op))
+                    current.elements = SkipList.add_skip_pointers(current.elements)
                 else:
-                    result = SkipList(result.merge(SkipList(self.inverted_index.get(term, [])), op))
-                    result.elements = SkipList.add_skip_pointers(result.elements)
-            
+                    current = SkipList(self.inverted_index.get(term, []))
+                stack.append((current, None))
+        
+        result = stack[-1][0]
         return [doc[0] if isinstance(doc, list) else doc for doc in result.elements]
 
 if __name__ == "__main__":
