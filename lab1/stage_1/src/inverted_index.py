@@ -49,6 +49,9 @@ if __name__ == "__main__":
     else:
         input_file_path = '../data/result/book_split_jieba.csv'
         output_file_path = '../data/result/book_inverted_index.json'
+    
+    if args.input_file:
+        input_file_path = args.input_file
 
     book_inverted_index = IndexBuilder.build_inverted_index(input_file_path)
     IndexBuilder.save_inverted_index(book_inverted_index, output_file_path)

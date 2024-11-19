@@ -2,6 +2,7 @@ import argparse
 import json
 import math
 from index_decompress import IndexDecompressor
+import time
 
 class SkipList:
     def __init__(self, elements):
@@ -167,6 +168,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--varbyte', action='store_true', help='Use varbyte encoded index file')
     parser.add_argument('-b', '--books', action='store_true', help='Query books')
     parser.add_argument('-m', '--movies', action='store_true', help='Query movies')
+    parser.add_argument('-t', '--time', action='store_true', help='Print time taken to load index and execute query')
     args = parser.parse_args()
 
     if args.delta:
@@ -191,11 +193,21 @@ if __name__ == "__main__":
     if args.index_file:
         index_file = args.index_file
 
+    if args.time:
+        start_time = time.time()
     bq = BooleanQuery(index_file, file_type)
+    if args.time:
+        end_time = time.time()
+        print("Index loaded in {:.6f} seconds".format(end_time - start_time))
 
     while True:
         query_string = input("Enter your boolean query (or type 'exit' to quit): ")
         if query_string.lower() == 'exit':
             break
+        if args.time:
+            start_time = time.time()
         result = bq.query(query_string)
+        if args.time:
+            end_time = time.time()
+            print("Query excuted in {:.6f} seconds".format(end_time - start_time))
         print("Documents matching the query:", result)
