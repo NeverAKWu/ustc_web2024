@@ -1,5 +1,7 @@
+import argparse
 import json
 import math
+from index_decompress import IndexDecompressor
 
 class SkipList:
     def __init__(self, elements):
@@ -86,9 +88,16 @@ class SkipList:
         return result
 
 class BooleanQuery:
-    def __init__(self, index_file):
-        with open(index_file, 'r', encoding='utf-8') as f:
-            self.inverted_index = json.load(f)
+    def __init__(self, index_file, file_type):
+        if file_type == 'normal':
+            with open(index_file, 'r', encoding='utf-8') as f:
+                self.inverted_index = json.load(f)
+        else:
+            decompressor = IndexDecompressor(index_file)
+            if file_type == 'delta':
+                self.inverted_index = decompressor.load_from_delta_file()
+            else:
+                self.inverted_index = decompressor.load_from_binary_file()
 
     def get_terms(self, query_string):
         terms = []
@@ -152,8 +161,37 @@ class BooleanQuery:
         return [doc[0] if isinstance(doc, list) else doc for doc in result.elements]
 
 if __name__ == "__main__":
-    index_file = '../data/result/book_inverted_index.json'
-    bq = BooleanQuery(index_file)
+    parser = argparse.ArgumentParser(description="Boolean Query Program")
+    parser.add_argument('--index_file', type=str, help='Path to the inverted index file')
+    parser.add_argument('-d', '--delta', action='store_true', help='Use delta encoded index file')
+    parser.add_argument('-v', '--varbyte', action='store_true', help='Use varbyte encoded index file')
+    parser.add_argument('-b', '--books', action='store_true', help='Query books')
+    parser.add_argument('-m', '--movies', action='store_true', help='Query movies')
+    args = parser.parse_args()
+
+    if args.delta:
+        if args.movies:
+            index_file = '../data/result/movie_delta_encode.json'
+        else:
+            index_file = '../data/result/book_delta_encode.json'
+        file_type = 'delta'
+    elif args.varbyte:
+        if args.movies:
+            index_file = '../data/result/movie_varbyte_encode.idx'
+        else:
+            index_file = '../data/result/book_varbyte_encode.idx'
+        file_type = 'varbyte'
+    else:
+        if args.movies:
+            index_file = '../data/result/movie_inverted_index.json'
+        else:
+            index_file = '../data/result/book_inverted_index.json'
+        file_type = 'normal'
+
+    if args.index_file:
+        index_file = args.index_file
+
+    bq = BooleanQuery(index_file, file_type)
 
     while True:
         query_string = input("Enter your boolean query (or type 'exit' to quit): ")
