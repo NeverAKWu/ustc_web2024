@@ -123,6 +123,27 @@ class BooleanQuery:
             terms.append(term)
         
         terms = [term.upper() if term in ['and', 'or', 'and_not'] else term for term in terms]
+
+        # Reorder terms connected by AND based on the length of their posting lists
+        i = 0
+        while i < len(terms):
+            if terms[i] not in ['AND', 'OR', 'AND_NOT', '(', ')']:
+                j = i + 1
+                while j < len(terms) and terms[j] not in ['OR', 'AND_NOT', '(', ')']:
+                    j += 1
+                j -= 1
+                if j > i:
+                    p = int((i+j+1)/2)
+                    q = j
+                    terms[i:j+1] = sorted(terms[i:j+1], key=lambda x: len(self.inverted_index.get(x, [])) if x not in ['AND', 'OR', 'AND_NOT'] else float('inf'))
+                    while p > i:
+                        #交换terms[p]和terms[q]
+                        terms[p],terms[q] = terms[q],terms[p]
+                        p-=1
+                        q-=2
+                i = j
+            i += 1
+
         return terms
     
     def query(self, query_string):
