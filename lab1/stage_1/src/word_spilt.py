@@ -69,15 +69,15 @@ def process_data(file_path, output_path, item_type):
 
 if __name__ == "__main__":
     # 创建命令行参数解析器
-    parser = argparse.ArgumentParser(description='Index Compressor')
+    parser = argparse.ArgumentParser(description='Word split processor')
     parser.add_argument('-b', '--books', action='store_true', help='split the books datasets')
     parser.add_argument('-m', '--movies', action='store_true', help='split the movies datasets')
     args = parser.parse_args()
 
     # 根据命令行参数处理不同的数据
     if args.books:
-        process_data('../data/origin/selected_book_top_1200_data_tag.csv', '../data/result/book_test.csv', 'Book')
+        process_data('../data/origin/selected_book_top_1200_data_tag.csv', '../data/result/book_split_jieba.csv', 'Book')
     elif args.movies:
-        process_data('../data/origin/selected_movie_top_1200_data_tag.csv', '../data/result/movie_test.csv', 'Movie')
+        process_data('../data/origin/selected_movie_top_1200_data_tag.csv', '../data/result/movie_split_jieba.csv', 'Movie')
     else:
         print("Please use '-b' or '-m' to specify the dataset to process.")
