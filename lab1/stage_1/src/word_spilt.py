@@ -3,12 +3,13 @@ import pandas as pd
 import ast
 import synonyms
 import pkuseg
+import argparse
 
 def word_split(tags):
     result = []
     for tag in tags :
-        #seg_list = jieba.cut_for_search(tag)  # jieba分词
-        seg_list = pkuseg.pkuseg().cut(tag) #pkuseg分词
+        seg_list = jieba.cut_for_search(tag)  # jieba分词
+        # seg_list = pkuseg.pkuseg().cut(tag) #pkuseg分词
         #去除停用词
         with open('../data/cn_stopwords.txt', 'r', encoding='utf-8') as f:
             stopwords = set(line.strip() for line in f)
@@ -45,31 +46,38 @@ def word_split(tags):
     return result
     
 
+def process_data(file_path, output_path, item_type):
+    # 读取 CSV 数据
+    df = pd.read_csv(file_path)
+    data = []
+    count = 0
 
-df = pd.read_csv('../data/origin/selected_book_top_1200_data_tag.csv')
-book_data = []
-count = 0
-for index, row in df.iterrows():
-    count = count + 1
-    print("已完成：", count)
-    #把Tags字符串转换为列表
-    s = row['Tags'].strip("{}")
-    tags = [tag.strip().strip("'") for tag in s.split(",")]
-    split_result = word_split(tags)
+    # 遍历每一行，处理 'Tags' 列
+    for index, row in df.iterrows():
+        count += 1
+        print(f"已完成：{count}")
+        # 将 Tags 字符串转换为列表
+        s = row['Tags'].strip("{}")
+        tags = [tag.strip().strip("'") for tag in s.split(",")]
+        split_result = word_split(tags)
 
-    book_data.append({'Book': row['Book'], 'Tags': split_result})
-pd.DataFrame(book_data, columns = ['Book', 'Tags']).to_csv("../data/result/book_test.csv", index=False)
+        # 根据 item_type 添加数据到列表
+        data.append({item_type: row[item_type], 'Tags': split_result})
 
-# df = pd.read_csv('../data/origin/selected_movie_top_1200_data_tag.csv')
-# movie_data = []
-# count = 0
-# for index, row in df.head().iterrows():
-#     count = count + 1
-#     print("已完成：", count)
-#     #把Tags字符串转换为列表
-#     s = row['Tags'].strip("{}")
-#     tags = [tag.strip().strip("'") for tag in s.split(",")]
-#     split_result = word_split(tags)
+    # 保存处理结果到 CSV 文件
+    pd.DataFrame(data, columns=[item_type, 'Tags']).to_csv(output_path, index=False)
 
-#     movie_data.append({'Movie': row['Movie'], 'Tags': split_result})
-# pd.DataFrame(movie_data, columns = ['Movie', 'Tags']).to_csv("../data/result/movie_test.csv", index=False)
+if __name__ == "__main__":
+    # 创建命令行参数解析器
+    parser = argparse.ArgumentParser(description='Index Compressor')
+    parser.add_argument('-b', '--books', action='store_true', help='split the books datasets')
+    parser.add_argument('-m', '--movies', action='store_true', help='split the movies datasets')
+    args = parser.parse_args()
+
+    # 根据命令行参数处理不同的数据
+    if args.books:
+        process_data('../data/origin/selected_book_top_1200_data_tag.csv', '../data/result/book_test.csv', 'Book')
+    elif args.movies:
+        process_data('../data/origin/selected_movie_top_1200_data_tag.csv', '../data/result/movie_test.csv', 'Movie')
+    else:
+        print("Please use '-b' or '-m' to specify the dataset to process.")
