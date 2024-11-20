@@ -211,7 +211,7 @@ for book, group in tqdm(grouped_book):
     i_users_list.append([(user, rate) for user, rate in zip(users, rates)])
 
 # 训练集和测试集划分
-train_data, test_data = train_test_split(loaded_data_deduped, test_size=0.001, random_state=42)
+train_data, test_data = train_test_split(loaded_data_deduped, test_size=0.1, random_state=42)
 
 # 创建训练集评分矩阵,也就是用户-物品评分矩阵，行是用户，列是书籍，值是评分
 train_matrix = train_data.pivot(index='user_map', columns='book_map', values='Rate')
