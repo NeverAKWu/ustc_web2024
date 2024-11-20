@@ -5,6 +5,7 @@ from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import ndcg_score
 from torch.utils.data import Dataset
+import argparse
 
 def create_id_mapping(id_list):
     # 从ID列表中删除重复项并创建一个排序的列表
@@ -161,84 +162,97 @@ def predict_one_item(ratings_matrix, target_user_idx, target_item_idx, k=5):
     predicted_rating = target_user_mean + (numerator / denominator)
     return predicted_rating
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="user-based cf")
 
-# 读loaded_data取保存的 CSV 文件
-loaded_data = pd.read_csv('data/book_score.csv')
+    parser.add_argument('-t', '--time', action='store_true', help="use time to modify scores")
+    parser.add_argument('-r', '--result', action='store_true', help="store the predict result")
+    args = parser.parse_args()
 
-loaded_data['Time'] = pd.to_datetime(loaded_data['Time'])
+    # 读loaded_data取保存的 CSV 文件
+    loaded_data = pd.read_csv('../data/book_score.csv')
 
-# 显示加载的数据
-print(loaded_data)
+    loaded_data['Time'] = pd.to_datetime(loaded_data['Time'])
 
-user_ids = loaded_data['User'].unique()
-book_ids = loaded_data['Book'].unique()
+    # 显示加载的数据
+    print(loaded_data)
 
-user_to_idx, idx_to_user = create_id_mapping(user_ids)
-book_to_idx, idx_to_book = create_id_mapping(book_ids)
+    user_ids = loaded_data['User'].unique()
+    book_ids = loaded_data['Book'].unique()
 
-u_items_list, i_users_list = [(0, 0)], [(0, 0)]
-loaded_data['user_map'] = loaded_data['User'].map(user_to_idx)
-loaded_data['book_map'] = loaded_data['Book'].map(book_to_idx)
+    user_to_idx, idx_to_user = create_id_mapping(user_ids)
+    book_to_idx, idx_to_book = create_id_mapping(book_ids)
 
-# 按用户和书籍分组，并保留每个用户对每本书的最后评分（基于Time列）
-# 先按user_map, book_map和Time列排序，然后去除重复评分，只保留最后的评分
-loaded_data_sorted = loaded_data.sort_values(by=['user_map', 'book_map', 'Time'], ascending=[True, True, False])
+    u_items_list, i_users_list = [(0, 0)], [(0, 0)]
+    loaded_data['user_map'] = loaded_data['User'].map(user_to_idx)
+    loaded_data['book_map'] = loaded_data['Book'].map(book_to_idx)
 
-# 对每个用户-书籍组合去重，只保留最新的评分
-loaded_data_deduped = loaded_data_sorted.drop_duplicates(subset=['user_map', 'book_map'], keep='first')
+    # 按用户和书籍分组，并保留每个用户对每本书的最后评分（基于Time列）
+    # 先按user_map, book_map和Time列排序，然后去除重复评分，只保留最后的评分
+    loaded_data_sorted = loaded_data.sort_values(by=['user_map', 'book_map', 'Time'], ascending=[True, True, False])
+    loaded_data_deduped = loaded_data_sorted.drop_duplicates(subset=['user_map', 'book_map'], keep='first')
 
-# 尝试根据评分时间对rate进行调整
-max_time = loaded_data_deduped['Time'].max()
-loaded_data_deduped['time_weight'] = loaded_data_deduped['Time'].apply(lambda x: 1 / (1 + (max_time.year - x.year)))
-loaded_data_deduped['Weight_Rate'] = loaded_data_deduped['Rate'] * loaded_data_deduped['time_weight']
-
-
-# 按映射后的用户 ID 分组
-grouped_user = loaded_data_deduped.groupby('user_map')
-grouped_book = loaded_data_deduped.groupby('book_map')
-
-# 遍历排序后的分组
-for user, group in tqdm(grouped_user):
-    books = group['book_map'].tolist()
-    rates = group['Rate'].tolist()
-    
-    u_items_list.append([(book, rate) for book, rate in zip(books, rates)])
-
-for book, group in tqdm(grouped_book):
-    users = group['user_map'].tolist()
-    rates = group['Rate'].tolist()
-    
-    i_users_list.append([(user, rate) for user, rate in zip(users, rates)])
-
-# 训练集和测试集划分
-train_data, test_data = train_test_split(loaded_data_deduped, test_size=0.1, random_state=42)
-
-# 创建训练集评分矩阵,也就是用户-物品评分矩阵，行是用户，列是书籍，值是评分
-train_matrix = train_data.pivot(index='user_map', columns='book_map', values='Rate')
-#train_matrix = train_data.pivot(index='user_map', columns='book_map', values='Weight_Rate')
-
-# 填充NaN值（表示用户未评分的项）为-1
-train_matrix = train_matrix.fillna(-1)
+    if args.time:
+        # 尝试根据评分时间对rate进行调整
+        max_time = loaded_data_deduped['Time'].max()
+        loaded_data_deduped['time_weight'] = loaded_data_deduped['Time'].apply(lambda x: 1 / (1 + (max_time.year - x.year)))
+        loaded_data_deduped['Rate'] = loaded_data_deduped['Rate'] * loaded_data_deduped['time_weight']
 
 
-# 预测测试集评分
-tqdm.pandas(desc="Predicting Ratings")
-test_data['pred'] = test_data.progress_apply(lambda row: predict_one_item(train_matrix, row['user_map']-1, row['book_map']-1, k=5), axis=1)
+    # 按映射后的用户 ID 分组
+    grouped_user = loaded_data_deduped.groupby('user_map')
+    grouped_book = loaded_data_deduped.groupby('book_map')
 
-# 按用户分组计算NDCG
-grouped_test = test_data.groupby('user_map')
-ndcg_per_user = []
-for i, group in tqdm(grouped_test):
-    try:
-        ndcg_per_user.append(compute_ndcg(group))
-    except:
-        continue
+    # 遍历排序后的分组
+    for user, group in tqdm(grouped_user):
+        books = group['book_map'].tolist()
+        rates = group['Rate'].tolist()
+        
+        u_items_list.append([(book, rate) for book, rate in zip(books, rates)])
 
-# ndcg_per_user = grouped_test.progress_apply(lambda group: compute_ndcg(group))
+    for book, group in tqdm(grouped_book):
+        users = group['user_map'].tolist()
+        rates = group['Rate'].tolist()
+        
+        i_users_list.append([(user, rate) for user, rate in zip(users, rates)])
 
-# 平均NDCG
-mean_ndcg = np.mean(ndcg_per_user)
-print(f"Mean NDCG: {mean_ndcg}")
+    # 训练集和测试集划分
+    train_data, test_data = train_test_split(loaded_data_deduped, test_size=0.2, random_state=42)
+
+    # 创建训练集评分矩阵,也就是用户-物品评分矩阵，行是用户，列是书籍，值是评分
+    train_matrix = train_data.pivot(index='user_map', columns='book_map', values='Rate')
+
+    # 填充NaN值（表示用户未评分的项）为-1
+    train_matrix = train_matrix.fillna(-1)
+
+
+    # 预测测试集评分
+    tqdm.pandas(desc="Predicting Ratings")
+    test_data['pred'] = test_data.progress_apply(lambda row: predict_one_item(train_matrix, row['user_map']-1, row['book_map']-1, k=5), axis=1)
+
+    # 按用户分组计算NDCG
+    grouped_test = test_data.groupby('user_map')
+    ndcg_per_user = []
+    all_groups = []
+    for i, group in tqdm(grouped_test):
+        try:
+            ndcg_per_user.append(compute_ndcg(group))
+
+            group_selected = group[['user_map', 'book_map', 'Rate', 'pred']]
+            all_groups.append(group_selected)
+        except:
+            continue
+
+    # ndcg_per_user = grouped_test.progress_apply(lambda group: compute_ndcg(group))
+    if args.result:
+        # 合并所有的分组数据
+        all_groups_df = pd.concat(all_groups, ignore_index=True)
+        # 将汇总数据写入一个 CSV 文件
+        all_groups_df.to_csv('../data/predict_result.csv', index=False)
+
+    # 平均NDCG
+    mean_ndcg = np.mean(ndcg_per_user)
+    print(f"Mean NDCG: {mean_ndcg}")
 
 
 
