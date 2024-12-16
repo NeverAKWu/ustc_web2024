@@ -1,10 +1,10 @@
 import gzip
 
 # 文件路径
-freebase_file = "./data/freebase_douban.gz"
-douban_to_fb_file = "./data/douban2fb.txt"
-movie_id_map_file = "./data/movie_id_map.txt"
-output_file = "kg_final.txt"
+freebase_file = "../data/freebase_douban.gz"
+douban_to_fb_file = "../data/douban2fb.txt"
+movie_id_map_file = "../data/movie_id_map.txt"
+output_file = "../kg_final.txt"
 
 # 读取豆瓣到 Freebase 的映射
 def read_douban_to_fb(file):

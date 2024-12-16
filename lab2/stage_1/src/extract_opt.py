@@ -1,8 +1,8 @@
 from collections import defaultdict
 
 # 输入和输出文件路径
-input_file = "kg_final.txt"
-output_file = "kg_final_opt.txt"
+input_file = "../kg_final.txt"
+output_file = "../kg_final_opt.txt"
 
 
 entity_count = defaultdict(int)
