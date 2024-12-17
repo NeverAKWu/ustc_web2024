@@ -44,9 +44,41 @@ while (flag):
     # 将过滤后的列表赋值回原来的变量
     lines = filtered_lines
 
+entity_map = {}
+relation_map = {}
+next_entity_id = 578  # 实体的映射起始值
+next_relation_id = 0  # 关系的映射起始值
+
 with open(output_file, 'w') as f:
     for line in lines:
-        f.write(line)
+        head, relation, tail = map(int, line.strip().split('\t'))
+            
+        # 处理头实体
+        if head <= 577:
+            new_head = head
+        else:
+            if head not in entity_map:
+                entity_map[head] = next_entity_id
+                next_entity_id += 1
+            new_head = entity_map[head]
+            
+        # 处理尾实体
+        if tail <= 577:  # 0-577 直接保留
+            new_tail = tail
+        else:  # 大于等于 578 需要重新映射
+            if tail not in entity_map:
+                entity_map[tail] = next_entity_id
+                next_entity_id += 1
+            new_tail = entity_map[tail]
+            
+        # 处理关系
+        if relation not in relation_map:
+            relation_map[relation] = next_relation_id
+            next_relation_id += 1
+        new_relation = relation_map[relation]
+
+        f.write(f"{new_head}\t{new_relation}\t{new_tail}\n")
+
 
 # # 输出最终结果
 # with open(output_file, 'w') as f:
