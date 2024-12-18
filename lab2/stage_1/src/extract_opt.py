@@ -17,6 +17,7 @@ with open(input_file, 'r') as f:
         entity_count[tail] += 1
         relation_count[relation] += 1
 
+# 反复过滤直到没有发生改变
 flag = True
 while (flag):
     filtered_lines = []
@@ -24,7 +25,7 @@ while (flag):
     for line in lines:
         head, relation, tail = map(int, line.strip().split('\t'))
         
-        # 检查条件，过滤满足以下之一的行
+        # 检查条件，过滤某些行
         if relation_count[relation] < 50:
             entity_count[head] -= 1
             entity_count[tail] -= 1
@@ -44,6 +45,7 @@ while (flag):
     # 将过滤后的列表赋值回原来的变量
     lines = filtered_lines
 
+# 删除某些行后 实体id和关系id可能不再连续 需要重新建立连续映射
 entity_map = {}
 relation_map = {}
 next_entity_id = 578  # 实体的映射起始值
@@ -78,27 +80,4 @@ with open(output_file, 'w') as f:
         new_relation = relation_map[relation]
 
         f.write(f"{new_head}\t{new_relation}\t{new_tail}\n")
-
-
-# # 输出最终结果
-# with open(output_file, 'w') as f:
-#     for line in lines:
-#         f.write(line)
-# # 过滤行并写入新文件
-# with open(output_file, 'w') as f:
-#     for line in lines:
-#         head, relation, tail = map(int, line.strip().split('\t'))
-#         # 检查条件，过滤满足以下之一的行
-#         if relation_count[relation] < 50:
-#             entity_count[head] -= 1
-#             entity_count[tail] -= 1
-#             relation_count[relation] -= 1
-#             continue
-#         if entity_count[head] < 10 or entity_count[tail] < 10:
-#             entity_count[head] -= 1
-#             entity_count[tail] -= 1
-#             relation_count[relation] -= 1
-#             continue
-#         # 如果没有被过滤，写入文件
-#         f.write(line)
 

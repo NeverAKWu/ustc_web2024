@@ -80,9 +80,8 @@ def map_to_indices(subgraph, douban_to_index, fb_to_douban, start_index):
 
     return mapped_triples
 
-# 主函数
 def main():
-    
+    # 读文件建立映射map
     print("Loading mappings...")
     douban_to_fb = read_douban_to_fb(douban_to_fb_file)
     douban_to_index = read_douban_to_index(movie_id_map_file)
@@ -90,11 +89,11 @@ def main():
     fb_entities = set(douban_to_fb.values())
     fb_to_douban = {v: k for k, v in douban_to_fb.items()}
 
-    
+    # 抽取一跳图谱
     print("Extracting one-hop subgraph...")
     subgraph = extract_one_hop_subgraph(freebase_file, fb_entities)
 
-    
+    # 映射成连续id
     print("Mapping to indices...")
     mapped_triples = map_to_indices(subgraph, douban_to_index, fb_to_douban, start_index=578)
 
