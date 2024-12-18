@@ -29,30 +29,6 @@ class DataLoader(DataLoaderBase):
         '''
         # 1. 为KG添加逆向三元组，即对于KG中任意三元组(h, r, t)，添加逆向三元组 (t, r+n_relations, h)，
         #    并将原三元组和逆向三元组拼接为新的DataFrame，保存在 self.kg_data 中。
-        
-        # 这段是预处理opt的，但是现已移动至stage1，可删
-        # filtered_h = kg_data[kg_data['h'] >= 578]['h']
-        # filtered_t = kg_data[kg_data['t'] >= 578]['t']
-
-        # combined_values = pd.concat([filtered_h, filtered_t]).drop_duplicates()
-        # sorted_unique_values = combined_values.sort_values().reset_index(drop=True)
-        # sorted_unique_values.index += 578  # 从 578 开始的索引
-        # mapping_table = sorted_unique_values.reset_index().set_index(0)['index'].to_dict()
-        # # 应用映射表到 'h' 和 't' 列，并保持小于等于578的值不变
-        # def apply_mapping(series, mapping):
-        #     return series.apply(lambda x: mapping[x] if x in mapping else x)
-        # kg_data['h'] = apply_mapping(kg_data['h'], mapping_table)
-        # kg_data['t'] = apply_mapping(kg_data['t'], mapping_table)
-        # # 根据 'h' 列进行排序
-        # kg_data = kg_data.sort_values(by='h')
-        # print(kg_data)
-
-        # unique_relations = kg_data['r'].unique()
-        # relation_to_new_index = {old_idx: new_idx for new_idx, old_idx in enumerate(unique_relations)}
-        # kg_data['r'] = kg_data['r'].map(relation_to_new_index)
-        # # kg_data = kg_data.sort_values(by=['h', 'r'])
-        # print(kg_data.head(20))
-        
         # 计算原始关系数量
         original_relations = kg_data['r'].nunique()
         self.n_relations = original_relations

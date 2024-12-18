@@ -37,9 +37,9 @@ def parse_args():
     parser.add_argument('--KG_embedding_type', type=str, default='TransE',
                         help='Specify the type of the KG embedding from {TransE, TransR}.')
 
-    parser.add_argument('--kg_l2loss_lambda', type=float, default=0.01,
+    parser.add_argument('--kg_l2loss_lambda', type=float, default=1e-2,
                         help='Lambda when calculating KG l2 loss.')
-    parser.add_argument('--cf_l2loss_lambda', type=float, default=0.05,
+    parser.add_argument('--cf_l2loss_lambda', type=float, default=5e-2,
                         help='Lambda when calculating CF l2 loss.')
 
     parser.add_argument('--lr', type=float, default=3e-4,
@@ -51,11 +51,14 @@ def parse_args():
 
     parser.add_argument('--print_every', type=int, default=100,
                         help='Iter interval of printing CF loss.')
-    parser.add_argument('--evaluate_every', type=int, default=10,
+    parser.add_argument('--evaluate_every', type=int, default=5,
                         help='Epoch interval of evaluating CF.')
 
     parser.add_argument('--Ks', nargs='?', default='[5, 10]',
                         help='Calculate metric@K when evaluating.')
+
+    parser.add_argument('--fusion_type', type=str, default='add',
+                    help='Specify the fusion type for combining item and entity embeddings from {add, mul, concat}.')
 
     args = parser.parse_args()
 

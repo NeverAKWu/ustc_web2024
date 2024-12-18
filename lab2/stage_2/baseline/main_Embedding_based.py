@@ -113,6 +113,7 @@ def train(args):
         total_loss = 0
         n_batch = data.n_cf_train // data.cf_batch_size + 1
 
+    #   --------------------------------------------------------------train with both cf and kg
         # for iter in range(1, n_batch + 1):
         #     time2 = time()
         #     cf_batch_user, cf_batch_pos_item, cf_batch_neg_item = data.generate_cf_batch(data.train_user_dict, data.cf_batch_size)
@@ -140,7 +141,7 @@ def train(args):
         #     if (iter % args.print_every) == 0:
         #         logging.info('+++KG & CF Training: Epoch {:04d} Iter {:04d} / {:04d} | Time {:.1f}s | Iter Loss {:.4f} | Iter Mean Loss {:.4f}'.format(epoch, iter, n_batch, time() - time2, batch_loss.item(), total_loss / iter))
 
-        #train with only cf
+        #--------------------------------------------------------------train with only cf
         for iter in range(1, n_batch + 1):
             time2 = time()
             cf_batch_user, cf_batch_pos_item, cf_batch_neg_item = data.generate_cf_batch(data.train_user_dict, data.cf_batch_size)  
@@ -163,7 +164,7 @@ def train(args):
             if (iter % args.print_every) == 0:
                 logging.info('+++KG & CF Training: Epoch {:04d} Iter {:04d} / {:04d} | Time {:.1f}s | Iter Loss {:.4f} | Iter Mean Loss {:.4f}'.format(epoch, iter, n_batch, time() - time2, batch_loss.item(), total_loss / iter))
         
-        #train with only kg
+        # --------------------------------------------------------------train with only kg
         for iter in range(1, n_batch + 1):
             time2 = time()
             kg_batch_head, kg_batch_relation, kg_batch_pos_tail, kg_batch_neg_tail = data.generate_kg_batch(data.kg_dict, data.kg_batch_size, data.n_entities)
@@ -186,9 +187,10 @@ def train(args):
 
             if (iter % args.print_every) == 0:
                 logging.info('---KG & CF Training: Epoch {:04d} Iter {:04d} / {:04d} | Time {:.1f}s | Iter Loss {:.4f} | Iter Mean Loss {:.4f}'.format(epoch, iter, n_batch, time() - time2, batch_loss.item(), total_loss / iter))
+            #--------------------------------------------------------------
 
         logging.info('KG & CF Training: Epoch {:04d} Total Iter {:04d} | Total Time {:.1f}s | Iter Mean Loss {:.4f}'.format(epoch, n_batch, time() - time1, total_loss / n_batch))
-
+            
         # evaluate cf
         if (epoch % args.evaluate_every) == 0 or epoch == args.n_epoch:
             time3 = time()
