@@ -120,8 +120,9 @@ class Embedding_based(nn.Module):
             concat_embed = torch.cat([item_embed, item_kg_embed], dim=-1)
             # 如果是拼接，则可能需要额外的线性层来调整维度
             # 这里假设 embed_dim 和 relation_dim 是相同的；如果不是，你可能需要调整尺寸
-            linear_layer = nn.Linear(concat_embed.size(-1), self.embed_dim).to(item_embed.device)
-            return linear_layer(concat_embed)
+            # linear_layer = nn.Linear(concat_embed.size(-1), self.embed_dim).to(item_embed.device)
+            # return linear_layer(concat_embed)
+            return concat_embed
         else:
             raise ValueError(f"Unknown fusion type: {self.fusion_type}")
 
@@ -142,6 +143,8 @@ class Embedding_based(nn.Module):
         item_pos_cf_embed = self._fuse_entity_knowledge(item_pos_embed, item_pos_kg_embed)
         item_neg_cf_embed = self._fuse_entity_knowledge(item_neg_embed, item_neg_kg_embed)
         
+        if self.fusion_type == 'concat':
+            user_embed = torch.cat([user_embed,user_embed],dim=1)
         pos_score = torch.sum(user_embed * item_pos_cf_embed, dim=1)                    # (cf_batch_size)
         neg_score = torch.sum(user_embed * item_neg_cf_embed, dim=1)                    # (cf_batch_size)
 
@@ -196,6 +199,8 @@ class Embedding_based(nn.Module):
         # 9. 为 物品嵌入 注入 实体嵌入的语义信息
         item_cf_embed = self._fuse_entity_knowledge(item_embed, item_kg_embed)          # (n_items, embed_dim)
 
+        if self.fusion_type == 'concat':
+            user_embed = torch.cat([user_embed,user_embed], dim=1)   
         cf_score = torch.matmul(user_embed, item_cf_embed.transpose(0, 1))              # (n_users, n_items)
         
         return cf_score
