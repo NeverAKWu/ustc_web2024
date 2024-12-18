@@ -138,7 +138,7 @@ class Embedding_based(nn.Module):
         return loss
 
 
-    def calc_loss(self, user_ids, item_pos_ids, item_neg_ids, h, r, pos_t, neg_t):
+    def calc_loss(self, user_ids, item_pos_ids, item_neg_ids, h, r, pos_t, neg_t, only_cf=False, only_kg=False):
         """
         user_ids:       (cf_batch_size)
         item_pos_ids:   (cf_batch_size)
@@ -154,9 +154,16 @@ class Embedding_based(nn.Module):
         elif self.KG_embedding_type == 'TransE':
             calc_kg_loss = self.calc_kg_loss_TransE
         
-        kg_loss = calc_kg_loss(h, r, pos_t, neg_t)
-        cf_loss = self.calc_cf_loss(user_ids, item_pos_ids, item_neg_ids)
-        
+        if(only_cf):
+            cf_loss = self.calc_cf_loss(user_ids, item_pos_ids, item_neg_ids)
+            kg_loss = 0
+        elif(only_kg):
+            kg_loss = calc_kg_loss(h, r, pos_t, neg_t)
+            cf_loss = 0
+        else:
+            cf_loss = self.calc_cf_loss(user_ids, item_pos_ids, item_neg_ids)
+            kg_loss = calc_kg_loss(h, r, pos_t, neg_t)
+
         loss = kg_loss + cf_loss
         return loss
 
@@ -179,9 +186,9 @@ class Embedding_based(nn.Module):
         return cf_score
 
 
-    def forward(self, *input, is_train):
+    def forward(self, *input, is_train, only_cf=False, only_kg=False):
         if is_train:
-            return self.calc_loss(*input)
+            return self.calc_loss(*input, only_cf=only_cf, only_kg=only_kg)
         else:
             return self.calc_score(*input)
 

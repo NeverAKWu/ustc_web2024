@@ -70,14 +70,18 @@ def train(args):
 
     # GPU / CPU
     device = torch.device("cuda:"+str(args.gpu_id)) if args.cuda else torch.device("cpu")
-
+    print("device ok")
     # load data
     data = DataLoader(args, logging)
+    print("data_load ok")
 
     # construct model & optimizer
     model = Embedding_based(args, data.n_users, data.n_items, data.n_entities, data.n_relations)
+    print("modle n_relations = ",data.n_relations)
+
     if args.use_pretrain == 1:
         model = load_model(model, args.pretrain_model_path)
+    print("modle ok")
 
     model.to(device)
     logging.info(model)
@@ -95,6 +99,11 @@ def train(args):
     epoch_list = []
     metrics_list = {k: {'precision': [], 'recall': [], 'ndcg': []} for k in Ks}
 
+    
+
+
+
+
     # train model
     for epoch in range(1, args.n_epoch + 1):
         model.train()
@@ -104,21 +113,43 @@ def train(args):
         total_loss = 0
         n_batch = data.n_cf_train // data.cf_batch_size + 1
 
+        # for iter in range(1, n_batch + 1):
+        #     time2 = time()
+        #     cf_batch_user, cf_batch_pos_item, cf_batch_neg_item = data.generate_cf_batch(data.train_user_dict, data.cf_batch_size)
+        #     kg_batch_head, kg_batch_relation, kg_batch_pos_tail, kg_batch_neg_tail = data.generate_kg_batch(data.kg_dict, data.kg_batch_size, data.n_entities)
+
+        #     cf_batch_user = cf_batch_user.to(device)
+        #     cf_batch_pos_item = cf_batch_pos_item.to(device)
+        #     cf_batch_neg_item = cf_batch_neg_item.to(device)
+        #     kg_batch_head = kg_batch_head.to(device)
+        #     kg_batch_relation = kg_batch_relation.to(device)
+        #     kg_batch_pos_tail = kg_batch_pos_tail.to(device)
+        #     kg_batch_neg_tail = kg_batch_neg_tail.to(device)
+
+        #     batch_loss = model(cf_batch_user, cf_batch_pos_item, cf_batch_neg_item, kg_batch_head, kg_batch_relation, kg_batch_pos_tail, kg_batch_neg_tail, is_train=True)
+
+        #     if np.isnan(batch_loss.cpu().detach().numpy()):
+        #         logging.info('ERROR: Epoch {:04d} Iter {:04d} / {:04d} Loss is nan.'.format(epoch, iter, n_batch))
+        #         sys.exit()
+
+        #     batch_loss.backward()
+        #     optimizer.step()
+        #     optimizer.zero_grad()
+        #     total_loss += batch_loss.item()
+
+        #     if (iter % args.print_every) == 0:
+        #         logging.info('+++KG & CF Training: Epoch {:04d} Iter {:04d} / {:04d} | Time {:.1f}s | Iter Loss {:.4f} | Iter Mean Loss {:.4f}'.format(epoch, iter, n_batch, time() - time2, batch_loss.item(), total_loss / iter))
+
+        #train with only cf
         for iter in range(1, n_batch + 1):
             time2 = time()
-            cf_batch_user, cf_batch_pos_item, cf_batch_neg_item = data.generate_cf_batch(data.train_user_dict, data.cf_batch_size)
-            kg_batch_head, kg_batch_relation, kg_batch_pos_tail, kg_batch_neg_tail = data.generate_kg_batch(data.kg_dict, data.kg_batch_size, data.n_entities)
+            cf_batch_user, cf_batch_pos_item, cf_batch_neg_item = data.generate_cf_batch(data.train_user_dict, data.cf_batch_size)  
 
             cf_batch_user = cf_batch_user.to(device)
             cf_batch_pos_item = cf_batch_pos_item.to(device)
             cf_batch_neg_item = cf_batch_neg_item.to(device)
 
-            kg_batch_head = kg_batch_head.to(device)
-            kg_batch_relation = kg_batch_relation.to(device)
-            kg_batch_pos_tail = kg_batch_pos_tail.to(device)
-            kg_batch_neg_tail = kg_batch_neg_tail.to(device)
-
-            batch_loss = model(cf_batch_user, cf_batch_pos_item, cf_batch_neg_item, kg_batch_head, kg_batch_relation, kg_batch_pos_tail, kg_batch_neg_tail, is_train=True)
+            batch_loss = model(cf_batch_user, cf_batch_pos_item, cf_batch_neg_item, None, None, None, None, is_train=True, only_cf=True)
 
             if np.isnan(batch_loss.cpu().detach().numpy()):
                 logging.info('ERROR: Epoch {:04d} Iter {:04d} / {:04d} Loss is nan.'.format(epoch, iter, n_batch))
@@ -130,7 +161,32 @@ def train(args):
             total_loss += batch_loss.item()
 
             if (iter % args.print_every) == 0:
-                logging.info('KG & CF Training: Epoch {:04d} Iter {:04d} / {:04d} | Time {:.1f}s | Iter Loss {:.4f} | Iter Mean Loss {:.4f}'.format(epoch, iter, n_batch, time() - time2, batch_loss.item(), total_loss / iter))
+                logging.info('+++KG & CF Training: Epoch {:04d} Iter {:04d} / {:04d} | Time {:.1f}s | Iter Loss {:.4f} | Iter Mean Loss {:.4f}'.format(epoch, iter, n_batch, time() - time2, batch_loss.item(), total_loss / iter))
+        
+        #train with only kg
+        for iter in range(1, n_batch + 1):
+            time2 = time()
+            kg_batch_head, kg_batch_relation, kg_batch_pos_tail, kg_batch_neg_tail = data.generate_kg_batch(data.kg_dict, data.kg_batch_size, data.n_entities)
+
+            kg_batch_head = kg_batch_head.to(device)
+            kg_batch_relation = kg_batch_relation.to(device)
+            kg_batch_pos_tail = kg_batch_pos_tail.to(device)
+            kg_batch_neg_tail = kg_batch_neg_tail.to(device)
+
+            batch_loss = model(None, None, None, kg_batch_head, kg_batch_relation, kg_batch_pos_tail, kg_batch_neg_tail, is_train=True, only_kg=True)
+
+            if np.isnan(batch_loss.cpu().detach().numpy()):
+                logging.info('ERROR: Epoch {:04d} Iter {:04d} / {:04d} Loss is nan.'.format(epoch, iter, n_batch))
+                sys.exit()
+
+            batch_loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            total_loss += batch_loss.item()
+
+            if (iter % args.print_every) == 0:
+                logging.info('---KG & CF Training: Epoch {:04d} Iter {:04d} / {:04d} | Time {:.1f}s | Iter Loss {:.4f} | Iter Mean Loss {:.4f}'.format(epoch, iter, n_batch, time() - time2, batch_loss.item(), total_loss / iter))
+
         logging.info('KG & CF Training: Epoch {:04d} Total Iter {:04d} | Total Time {:.1f}s | Iter Mean Loss {:.4f}'.format(epoch, n_batch, time() - time1, total_loss / n_batch))
 
         # evaluate cf

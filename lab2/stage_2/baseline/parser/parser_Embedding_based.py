@@ -37,19 +37,19 @@ def parse_args():
     parser.add_argument('--KG_embedding_type', type=str, default='TransE',
                         help='Specify the type of the KG embedding from {TransE, TransR}.')
 
-    parser.add_argument('--kg_l2loss_lambda', type=float, default=1e-4,
+    parser.add_argument('--kg_l2loss_lambda', type=float, default=0.01,
                         help='Lambda when calculating KG l2 loss.')
-    parser.add_argument('--cf_l2loss_lambda', type=float, default=1e-4,
+    parser.add_argument('--cf_l2loss_lambda', type=float, default=0.05,
                         help='Lambda when calculating CF l2 loss.')
 
-    parser.add_argument('--lr', type=float, default=1e-3,
+    parser.add_argument('--lr', type=float, default=3e-4,
                         help='Learning rate.')
     parser.add_argument('--n_epoch', type=int, default=1000,
                         help='Number of epoch.')
     parser.add_argument('--stopping_steps', type=int, default=10,
                         help='Number of epoch for early stopping')
 
-    parser.add_argument('--print_every', type=int, default=1,
+    parser.add_argument('--print_every', type=int, default=100,
                         help='Iter interval of printing CF loss.')
     parser.add_argument('--evaluate_every', type=int, default=10,
                         help='Epoch interval of evaluating CF.')
