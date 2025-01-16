@@ -8,7 +8,7 @@ from langchain.schema.output_parser import StrOutputParser
 import os
 import csv
 
-os.environ["DASHSCOPE_API_KEY"] = "sk-001659b993184476b5f3a0984192e616"
+os.environ["DASHSCOPE_API_KEY"] = ""
 llm = Tongyi()
 print("load llm ok!")
 
