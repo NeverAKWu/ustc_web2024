@@ -9,7 +9,6 @@ import numpy as np
 loader = CSVLoader(file_path="../data/law_data_3k.csv", encoding='utf-8')
 documents = loader.load()
 
-
 # 初始化文本分割器
 text_splitter = CharacterTextSplitter(
     #separator="\n",  # 分割符
@@ -20,9 +19,10 @@ text_splitter = CharacterTextSplitter(
 # 分割文本
 splitted_documents = text_splitter.split_documents(documents)
 
-
+#向量化
 embedding_model = HuggingFaceBgeEmbeddings(model_name="moka-ai/m3e-base")
 
+# 数据入库
 db = FAISS.from_documents(splitted_documents, embedding_model)
 
 db.save_local("../data/faiss_index")
